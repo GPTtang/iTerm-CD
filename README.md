@@ -270,14 +270,17 @@ GitHub Actions 发布流程见：`.github/workflows/macos-release.yml`
 
 ## 提交到 GitHub 前建议
 
-如果你准备正式开源，建议再补这些仓库级文件：
+如果你准备继续完善开源仓库，建议后续再补这些内容：
 
-- `LICENSE`
 - `CHANGELOG.md`
 - 一张截图或录屏 GIF
 - `CONTRIBUTING.md`
 
-其中 `LICENSE` 最重要。没有许可证，别人默认没有明确的使用、修改和分发权限。
+许可证文件已经提供，当前使用 `MIT License`。
+
+## License
+
+本项目使用 `MIT License`，见 `LICENSE`。
 
 ## 免责声明
 
