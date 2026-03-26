@@ -13,9 +13,19 @@
 
 **安装**
 
-1. 下载 [cd-to-iTerm2.zip](https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm2.zip) 并解压
-2. 将 `cd to iTerm2.app` 移入 `~/Applications`
-3. 打开 Finder，按住 **⌘** 将 App 拖入工具栏
+在终端运行（推荐，避免 macOS 安全拦截）：
+
+```bash
+curl -L https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm2.zip -o /tmp/cd-to-iTerm2.zip \
+  && ditto -x -k /tmp/cd-to-iTerm2.zip /tmp/cd-iterm2 \
+  && cp -r "/tmp/cd-iterm2/cd to iTerm2.app" ~/Applications/ \
+  && rm -rf /tmp/cd-to-iTerm2.zip /tmp/cd-iterm2 \
+  && echo "✅ 安装完成"
+```
+
+然后打开 Finder，按住 **⌘** 将 `~/Applications/cd to iTerm2.app` 拖入工具栏。
+
+> 如果直接下载 zip 出现"无法验证开发者"提示，右键 App → **Open** → **Open** 即可绕过。
 
 **首次点击工具栏按钮时**，macOS 会请求 Finder 权限 → 点「去授权」→ 在系统设置中勾选 Finder → 完成。
 
