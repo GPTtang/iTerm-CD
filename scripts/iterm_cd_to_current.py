@@ -1,207 +1,153 @@
 #!/usr/bin/env python3
+"""
+iTerm CD To Current
+-------------------
+An iTerm2 status bar component that shows the current working directory
+and lets you click "cd to ▶" to run `cd <path>` in the active session.
 
-import html
-import shlex
-from typing import List, Optional
+Requires:
+  - iTerm2 with Python Runtime installed
+  - Shell integration enabled so iTerm2 can track the current directory
+
+Settings (via defaults write):
+
+  # A. 最多显示几段路径（0 = 完整路径）
+  defaults write io.github.iterm-cd max-path-segments -int 3
+
+  # B. 点击后是否清屏
+  defaults write io.github.iterm-cd clear-on-cd -bool true
+
+  # C. 点击动作: cd（默认）| copy（复制路径）| finder（在 Finder 中打开）
+  defaults write io.github.iterm-cd click-action -string copy
+"""
 
 import iterm2
+import os
+import shlex
+import subprocess
 
 
-BADGE_PREFIX = "cd to"
-BADGE_MAX_PATH = 44
-LABEL_MAX_PATH = 54
-TITLE_MAX_PATH = 72
+APP_DOMAIN = "io.github.iterm-cd"
 
 
-def shorten_path(path: str, max_length: int) -> str:
-    path = (path or "").strip()
-    if not path:
-        return "unknown"
-    if path == "/":
-        return "/"
-    if len(path) <= max_length:
-        return path
+# ── Settings ─────────────────────────────────────────────────────────────────
 
-    segments = [segment for segment in path.split("/") if segment]
-    if not segments:
-        return "/"
-
-    if len(segments) == 1:
-        tail = segments[0]
-        keep = max(1, max_length - 2)
-        return f"/…{tail[-keep:]}"
-
-    compact = []
-    for index, segment in enumerate(segments):
-        if index == len(segments) - 1:
-            compact.append(segment)
-        elif segment.startswith(".") and len(segment) > 1:
-            compact.append(segment[:2])
-        else:
-            compact.append(segment[:1])
-
-    candidate = "/" + "/".join(compact)
-    if len(candidate) <= max_length:
-        return candidate
-
-    tail_keep = max(1, max_length - 1)
-    return f"…{path[-tail_keep:]}"
+def _defaults_read(key: str) -> str | None:
+    """Read a single key from our defaults domain. Returns None if not set."""
+    r = subprocess.run(
+        ["defaults", "read", APP_DOMAIN, key],
+        capture_output=True, text=True,
+    )
+    return r.stdout.strip() if r.returncode == 0 else None
 
 
-def format_badge(path: str) -> str:
-    return f"{BADGE_PREFIX}\n{shorten_path(path, BADGE_MAX_PATH)}"
+class Settings:
+    """Lazily reads user defaults; re-reads on each click so changes take effect
+    without restarting the script."""
 
-
-def format_title(path: str) -> str:
-    return f"{BADGE_PREFIX} {shorten_path(path, TITLE_MAX_PATH)}"
-
-
-def format_status_variants(path: str) -> List[str]:
-    full = (path or "").strip() or "unknown"
-    basename = full.rstrip("/").split("/")[-1] if full not in {"", "/"} else "/"
-    variants = [
-        f"{BADGE_PREFIX} {full}",
-        f"{BADGE_PREFIX} {shorten_path(full, LABEL_MAX_PATH)}",
-        f"{BADGE_PREFIX} {basename}",
-        BADGE_PREFIX,
-    ]
-    deduped = []
-    for item in variants:
-        if item not in deduped:
-            deduped.append(item)
-    return deduped
-
-
-async def read_session_path(session: iterm2.Session) -> Optional[str]:
-    for name in ("path", "session.path"):
+    @property
+    def max_path_segments(self) -> int:
+        v = _defaults_read("max-path-segments")
         try:
-            value = await session.async_get_variable(name)
-        except Exception:
-            continue
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return None
+            return max(0, int(v)) if v is not None else 0
+        except ValueError:
+            return 0
+
+    @property
+    def clear_on_cd(self) -> bool:
+        v = _defaults_read("clear-on-cd")
+        return (v or "").lower() in ("1", "true", "yes")
+
+    @property
+    def click_action(self) -> str:
+        v = _defaults_read("click-action")
+        return v if v in ("cd", "copy", "finder") else "cd"
 
 
-async def apply_badge(session: iterm2.Session, path: Optional[str]) -> None:
-    update = iterm2.LocalWriteOnlyProfile()
-    update.set_badge_text(format_badge(path or "unknown"))
-    await session.async_set_profile_properties(update)
+settings = Settings()
 
 
-def popover_html(path: str, command: str) -> str:
-    escaped_path = html.escape(path)
-    escaped_command = html.escape(command)
-    return f"""
-    <html>
-      <body style="font: 13px -apple-system, BlinkMacSystemFont, sans-serif; padding: 12px; color: #1f2937;">
-        <div style="font-weight: 600; margin-bottom: 8px;">cd 已发送到当前 Session</div>
-        <div style="margin-bottom: 6px;"><strong>目录</strong></div>
-        <div style="margin-bottom: 10px; word-break: break-all;">{escaped_path}</div>
-        <div style="margin-bottom: 6px;"><strong>命令</strong></div>
-        <code style="display: block; white-space: pre-wrap;">{escaped_command}</code>
-      </body>
-    </html>
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def shorten_path(path: str, max_segments: int) -> str:
     """
+    Collapse the middle of a path so at most `max_segments` directory
+    components are visible.
+
+    Examples (max_segments=2):
+      /Users/me/projects/myapp/src  →  ~/…/myapp/src
+      ~/work                        →  ~/work          (already short)
+    """
+    home = os.path.expanduser("~")
+    display = path.replace(home, "~", 1) if path.startswith(home) else path
+
+    if max_segments <= 0:
+        return display
+
+    parts = display.split("/")
+    # parts[0] is "" (absolute) or "~" (home-relative)
+    if len(parts) <= max_segments + 1:
+        return display
+
+    head = parts[0]          # "" or "~"
+    tail = parts[-max_segments:]
+    return head + "/\u2026/" + "/".join(tail)
 
 
-async def main(connection: iterm2.Connection) -> None:
-    app = await iterm2.async_get_app(connection)
+# ── Main ──────────────────────────────────────────────────────────────────────
 
+async def main(connection):
     component = iterm2.StatusBarComponent(
-        short_description="CD To Current Directory",
+        short_description="cd to...",
         detailed_description=(
-            "Show the current directory and click to inject a cd command "
-            "for that directory into the current session."
+            "Shows the current directory. "
+            "Click ▶ to cd / copy path / open in Finder. "
+            "Configure with: defaults write io.github.iterm-cd <key> <value>"
         ),
         knobs=[],
-        exemplar="cd to /Users/name/workspace/project",
+        exemplar="~/projects/myapp ▶",
         update_cadence=None,
-        identifier="com.liyong.iterm.cd-to-current-directory",
+        identifier="io.github.iterm-cd.cd-to-current",
     )
 
-    async def sync_badge(session_id: str) -> None:
-        session = app.get_session_by_id(session_id)
-        if not session:
-            return
-
-        initial_path = await read_session_path(session)
-        await apply_badge(session, initial_path)
-
-        async with iterm2.VariableMonitor(
-            connection,
-            iterm2.VariableScopes.SESSION,
-            "path",
-            session_id,
-        ) as monitor:
-            while True:
-                path = await monitor.async_get()
-                session = app.get_session_by_id(session_id)
-                if not session:
-                    return
-                value = path if isinstance(path, str) and path.strip() else None
-                await apply_badge(session, value)
-
-    @iterm2.TitleProviderRPC
-    async def cd_to_title(path=iterm2.Reference("path?")):
-        return format_title(path or "unknown")
-
+    # ── A: display with optional path shortening ──────────────────────────────
     @iterm2.StatusBarRPC
-    async def cd_to_status_bar(knobs, path=iterm2.Reference("path?")):
-        return format_status_variants(path or "unknown")
-
-    async def send_cd(session_id: str) -> None:
-        session = app.get_session_by_id(session_id)
-        if not session:
-            return
-
-        path = await read_session_path(session)
+    async def cwd_component(knobs, path=iterm2.Reference("path")):
         if not path:
-            await component.async_open_popover(
-                session_id,
-                """
-                <html>
-                  <body style="font: 13px -apple-system, BlinkMacSystemFont, sans-serif; padding: 12px;">
-                    当前 session 没有可用的路径信息。请先启用 iTerm2 Shell Integration。
-                  </body>
-                </html>
-                """,
-                iterm2.Size(340, 90),
-            )
+            return "cd to..."
+        display = shorten_path(path, settings.max_path_segments)
+        return f"{display} \u25b6"
+
+    # ── C: click actions ──────────────────────────────────────────────────────
+    async def on_click(session_id):
+        app = await iterm2.async_get_app(connection)
+        session = app.get_session_by_id(session_id)
+        if session is None:
             return
 
-        command = f"cd -- {shlex.quote(path)}\n"
-        await session.async_send_text(command, suppress_broadcast=True)
-        await component.async_open_popover(
-            session_id,
-            popover_html(path, command.rstrip()),
-            iterm2.Size(420, 150),
-        )
+        path = await session.async_get_variable("path")
+        if not path:
+            return
 
-    @iterm2.RPC
-    async def cd_to_current_directory(session_id=iterm2.Reference("id")):
-        await send_cd(session_id)
+        action = settings.click_action
 
-    @iterm2.RPC
-    async def cd_to_current_directory_click(session_id):
-        await send_cd(session_id)
+        if action == "copy":
+            # Copy path to clipboard
+            subprocess.run(["pbcopy"], input=path.encode())
 
-    await cd_to_title.async_register(
-        connection,
-        "CD To Current Directory",
-        "com.liyong.iterm.cd-to-current-directory.title",
-    )
-    await cd_to_current_directory.async_register(connection)
-    await component.async_register(
-        connection,
-        cd_to_status_bar,
-        onclick=cd_to_current_directory_click,
-    )
+        elif action == "finder":
+            # Reveal in Finder
+            subprocess.run(["open", path])
 
-    await iterm2.EachSessionOnceMonitor.async_foreach_session_create_task(
-        app,
-        sync_badge,
-    )
+        else:
+            # B: cd, with optional clear
+            cmd = f"cd {shlex.quote(path)}"
+            if settings.clear_on_cd:
+                cmd += " && clear"
+            await session.async_send_text(cmd + "\n")
+
+    await component.async_register(connection, cwd_component, onclick=on_click)
+    await iterm2.async_main(connection)
 
 
 iterm2.run_forever(main)

@@ -1,287 +1,152 @@
 # iTerm CD To Current
 
-`iTerm CD To Current` 是一个面向 iTerm2 的小工具，用来把当前目录显示出来，并提供一个可点击的 `cd to ...` 入口，点一下就把当前 shell 切到该目录。
+本项目包含两个独立工具，都围绕"快速 cd 到目标目录"这一需求：
 
-它适合这类场景：
+| 工具 | 入口 | 功能 |
+|------|------|------|
+| **状态栏组件** | iTerm2 状态栏 | 显示当前目录，点击在同一 session 执行 cd |
+| **Finder 快速操作** | Finder 右键菜单 / 工具栏 | 在 Finder 中选中目录，一键在 iTerm2 打开 |
 
-- 你开了很多 tab / pane，想快速看清当前目录
-- 你想在 iTerm2 里给当前 session 加一个明显的“回到当前目录”入口
-- 你想把这个能力打包成 `.app`、`.pkg`、`.dmg` 发给别人直接用
+---
 
-## 功能
+## 工具一：iTerm2 状态栏组件
 
-- 自动把当前目录同步到 session `badge`
-- 提供 `Title Provider`，可把目录显示到 pane 顶部标题
-- 提供可点击的 `Status Bar` 组件
-- 点击后向当前 session 注入 `cd -- <current-path>`
-- 支持命令行安装 / 卸载
-- 支持 macOS `.app` / `.pkg` / `.dmg` 打包
-- 支持 Developer ID 签名和 notarization 发布流程
+在 iTerm2 状态栏显示当前目录路径，点击即执行 `cd`。
 
-## 原理
+```
+~/projects/myapp ▶
+```
 
-iTerm2 没有一个“固定在顶部且同时可点击”的单一控件，所以这个项目把能力拆开实现：
+### 安装
 
-- 顶部显示：用 `badge` 或 `title`
-- 点击交互：用 `Status Bar`
-
-最终效果是：
-
-- 顶部能看到当前目录
-- 底部状态栏有一个 `cd to ...` 可点击按钮
-
-## 依赖
-
-- macOS
-- iTerm2
-- iTerm2 Python API
-- iTerm2 Shell Integration
-
-没有启用 Shell Integration 时，`session.path` 可能为空，脚本无法稳定拿到当前目录。
-
-## 给普通用户
-
-如果你只是想装到自己的 Mac 上，用最短流程：
-
-1. 去 [GitHub Releases](https://github.com/GPTtang/iTerm-CD/releases) 下载 `iTerm CD Installer.pkg`
-2. 双击安装
-3. 打开 iTerm2
-4. 进入 `Settings > Profiles > Session`
-5. 打开 `Status bar enabled`
-6. 点击 `Configure Status Bar`
-7. 把 `CD To Current Directory` 拖进状态栏
-
-装完后，状态栏里就会出现一个 `cd to ...` 按钮。点击它，就会切到当前目录。
-
-## 安装
-
-### 方式 1：从 GitHub Releases 安装
-
-普通用户建议直接从 [GitHub Releases](https://github.com/GPTtang/iTerm-CD/releases) 下载：
-
-- `iTerm CD Installer.pkg`
-- 或 `iTerm-CD-macOS.dmg`
-
-推荐优先使用 `.pkg`。
-
-#### 使用 `.pkg`
-
-1. 下载 `iTerm CD Installer.pkg`
-2. 双击安装
-3. 安装完成后打开 iTerm2
-
-#### 使用 `.dmg`
-
-1. 下载 `iTerm-CD-macOS.dmg`
-2. 双击打开
-3. 在镜像里双击 `iTerm CD Installer.pkg`
-4. 安装完成后打开 iTerm2
-
-### 方式 2：使用 `.app` 安装器
-
-如果你拿到的是：
-
-- `iTerm CD Installer.app`
-
-直接双击运行即可。
-
-### 方式 3：命令行安装
-
-适合自己维护源码的用户：
+**前提**：已安装 [iTerm2](https://iterm2.com/)
 
 ```bash
-git clone https://github.com/GPTtang/iTerm-CD.git
+git clone https://github.com/your-username/iTerm-CD.git
 cd iTerm-CD
-./install.sh
+bash install.sh
 ```
 
-如果你希望直接修改仓库里的脚本并立即生效，可以改用软链接模式：
+脚本自动完成：
+- 安装 AutoLaunch 脚本到 iTerm2
+- 安装 Shell Integration（追踪当前目录）
+- 启用状态栏并添加 `cd to...` 组件
+
+**最后一步**：iTerm2 菜单 → Scripts → Manage → Install Python Runtime → 点 Install
+
+安装完成后重开一个 iTerm2 窗口，状态栏即出现路径显示。
+
+### 使用
+
+| 操作 | 效果 |
+|------|------|
+| 单击状态栏路径 | 在当前 session 执行 `cd <path>` |
+| 默认显示 | 完整路径，如 `~/projects/myapp/src ▶` |
+
+### 设置
+
+通过 `defaults write` 调整，无需重新安装，下次点击即生效。
+
+**路径显示段数**（A）
 
 ```bash
-./install.sh --link
+# 只显示最后 3 段：~/…/myapp/src ▶
+defaults write io.github.iterm-cd max-path-segments -int 3
+
+# 恢复完整路径（默认）
+defaults delete io.github.iterm-cd max-path-segments
 ```
 
-### 方式 4：手动安装脚本
-
-把 `scripts/iterm_cd_to_current.py` 放到：
-
-```text
-~/Library/Application Support/iTerm2/Scripts/AutoLaunch/
-```
-
-然后重启 iTerm2，或者在 `Scripts` 菜单里手动运行它。
-
-## 使用
-
-安装完成后，需要在 iTerm2 里手动启用状态栏按钮。
-
-### 开启状态栏按钮
-
-在 iTerm2 中：
-
-1. 打开 `Settings > Profiles > Session`
-2. 开启 `Status bar enabled`
-3. 点击 `Configure Status Bar`
-4. 把 `CD To Current Directory` 拖进状态栏
-
-之后状态栏会出现 `cd to ...`。点击后会发送：
+**点击后清屏**（B）
 
 ```bash
-cd -- '当前目录'
+# cd 后自动执行 clear
+defaults write io.github.iterm-cd clear-on-cd -bool true
+
+# 关闭（默认）
+defaults delete io.github.iterm-cd clear-on-cd
 ```
 
-### 开启顶部目录显示
-
-脚本会自动给 session 写入 `badge`，例如：
-
-```text
-cd to
-/Users/you/project
-```
-
-如果你希望目录同时显示在 pane 顶部标题栏：
-
-1. 打开 `Settings > Appearance`
-2. 开启 `Show per-pane title bar with split panes`
-3. 打开 `Settings > Profiles > General > Title`
-4. 选择 `CD To Current Directory`
-
-### 启用前提
-
-建议先启用 iTerm2 Shell Integration，否则当前目录识别可能不准确。
-
-### 可选：绑定快捷键
-
-脚本注册了一个 RPC：
-
-```text
-cd_to_current_directory()
-```
-
-你可以在 `Settings > Keys` 新增：
-
-- Action: `Invoke Script Function`
-- Function Call: `cd_to_current_directory()`
-
-## 卸载
-
-命令行卸载：
+**点击动作**（C）
 
 ```bash
-./uninstall.sh
+# 在当前 session 执行 cd（默认）
+defaults write io.github.iterm-cd click-action -string cd
+
+# 复制路径到剪贴板
+defaults write io.github.iterm-cd click-action -string copy
+
+# 在 Finder 中打开该目录
+defaults write io.github.iterm-cd click-action -string finder
 ```
 
-或直接双击：
-
-- `iTerm CD Uninstaller.app`
-
-卸载时会：
-
-- 删除 `AutoLaunch` 目录里的安装脚本
-- 尝试清空当前已打开 session 的顶部 `badge`
-
-完整清理通常还需要重启一次 iTerm2，因为状态栏组件和标题提供器是运行时注册的。
-
-## 项目结构
-
-```text
-iTerm-CD/
-├── assets/
-│   └── macos/
-│       ├── installer-icon.svg
-│       └── uninstaller-icon.svg
-├── docs/
-│   └── macos-release.md
-├── packaging/
-│   └── macos/
-│       ├── build_apps.sh
-│       ├── build_dmg.sh
-│       ├── build_icons.sh
-│       ├── build_pkg.sh
-│       ├── build_release.sh
-│       ├── common.sh
-│       ├── installer.js
-│       ├── install_payload.sh
-│       ├── pkg_postinstall.sh
-│       ├── uninstall_payload.sh
-│       ├── uninstaller.js
-│       └── DMG-README.txt
-├── scripts/
-│   └── iterm_cd_to_current.py
-├── .github/
-│   └── workflows/
-│       └── macos-release.yml
-├── install.sh
-├── uninstall.sh
-└── README.md
-```
-
-## 构建
-
-### 生成 `.app`
+### 卸载
 
 ```bash
-zsh packaging/macos/build_apps.sh
+bash uninstall.sh
 ```
 
-### 生成 `.pkg`
+---
+
+## 工具二：Finder 快速操作（cd to iTerm2）
+
+在 Finder 中右键任意文件或文件夹，选择 `cd to iTerm2`，直接在 iTerm2 打开该目录。
+类似 [cdto](https://github.com/jbtule/cdto)，但目标终端是 iTerm2。
+
+### 安装
 
 ```bash
-zsh packaging/macos/build_pkg.sh
+bash install.sh
 ```
 
-### 生成 `.dmg`
+自动完成：编译 App、安装到 `~/Applications`、安装 Quick Action、触发 Finder 权限授权弹窗。
+
+### 首次授权（只需一次）
+
+`install.sh` 运行后会自动弹出权限询问框：
+
+1. 弹出「cd to iTerm2 想要访问 Finder」→ 点 **好**
+2. 弹出「去授权」对话框 → 点 **去授权** → 自动跳转到系统设置自动操作页面
+3. 在列表中找到 `cd to iTerm2` → 勾选 **Finder**
+
+### 添加到 Finder 工具栏
+
+1. 打开 Finder，按 **⇧⌘G** 输入 `~/Applications` 回车
+2. 找到 `cd to iTerm2.app`，按住 **⌘** 拖到 Finder 工具栏
+
+### 使用
+
+**工具栏按钮**：点击后在 iTerm2 打开当前 Finder 目录
+
+**右键菜单**：右键文件或文件夹 → Quick Actions → **cd to iTerm2**
+
+### 使用
+
+| 选中内容 | 效果 |
+|----------|------|
+| 选中文件夹 | 在 iTerm2 打开该文件夹 |
+| 选中文件 | 在 iTerm2 打开文件所在目录 |
+| 未选中（直接点工具栏） | 打开当前 Finder 窗口的目录 |
+
+已有 iTerm2 窗口时新建 tab，没有窗口时新建 window。
+
+### 卸载
 
 ```bash
-zsh packaging/macos/build_dmg.sh
+rm -rf ~/Library/Services/"cd to iTerm2.workflow"
+/System/Library/CoreServices/pbs -update
 ```
 
-### 一次性生成全部产物
+---
 
-```bash
-zsh packaging/macos/build_release.sh
-```
+## 工作原理
 
-## Developer ID 签名与 notarization
+**状态栏组件**：基于 [iTerm2 Python API](https://iterm2.com/python-api/)，注册自定义状态栏组件，读取 Shell Integration 写入的 `path` 变量，点击时向 session 发送 `cd <path>` 命令。
 
-仓库已经预留了正式发布所需的流程：
+**Finder 快速操作**：Automator Quick Action（.workflow），接收 Finder 选中项，通过 AppleScript 控制 iTerm2 打开对应目录。
 
-- 自定义图标
-- Developer ID Application 签名
-- Developer ID Installer 签名
-- `notarytool` 提交 notarization
-- `stapler` 回写票据
+---
 
-本地发布说明见：`docs/macos-release.md`
+## 参考项目
 
-GitHub Actions 发布流程见：`.github/workflows/macos-release.yml`
-
-## 仓库地址
-
-- GitHub: https://github.com/GPTtang/iTerm-CD
-- Releases: https://github.com/GPTtang/iTerm-CD/releases
-
-## 限制
-
-- 当前只面向 macOS + iTerm2
-- 依赖 iTerm2 Shell Integration 才能稳定获取当前目录
-- “顶部显示”和“点击交互”是两套独立能力的组合，不是单一控件
-- 未签名构建在别的机器上可能需要右键“打开”一次
-
-## 提交到 GitHub 前建议
-
-如果你准备继续完善开源仓库，建议后续再补这些内容：
-
-- `CHANGELOG.md`
-- 一张截图或录屏 GIF
-- `CONTRIBUTING.md`
-
-许可证文件已经提供，当前使用 `MIT License`。
-
-## License
-
-本项目使用 `MIT License`，见 `LICENSE`。
-
-## 免责声明
-
-这是一个基于 iTerm2 官方脚本能力实现的小工具，不隶属于 iTerm2 官方项目。
+- [cdto](https://github.com/jbtule/cdto) — Finder 工具栏 App，在 Terminal 中打开当前 Finder 目录
