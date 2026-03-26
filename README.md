@@ -33,6 +33,8 @@ bash install.sh
 
 ## 工具一：Finder 工具栏 App
 
+[![Download](https://img.shields.io/github/v/release/GPTtang/iTerm-CD?label=Download&logo=github)](https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm2.zip)
+
 类似 cdto，在 Finder 中打开 iTerm2 到当前目录。
 
 ### 首次授权（只需一次）
