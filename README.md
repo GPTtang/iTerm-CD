@@ -1,9 +1,11 @@
 # iTerm CD To Current
 
-两个小工具，让 iTerm2 与 Finder 之间的目录跳转更顺手：
+**在 Finder 和 iTerm2 之间快速跳转目录。**
 
-- **在 Finder 里** 找到目录，一键在 iTerm2 打开
-- **在 iTerm2 里** 点状态栏路径，快速 cd 到目标目录
+| 场景 | 解决方式 |
+|------|---------|
+| 在 Finder 里找到某个目录，想立刻用终端打开 | 点工具栏按钮，直接在 iTerm2 打开 |
+| 在 iTerm2 里开了很多 tab，想快速 cd 到某个路径 | 点状态栏路径，当前 session 立即跳转 |
 
 ---
 
