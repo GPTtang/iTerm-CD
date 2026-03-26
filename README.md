@@ -156,6 +156,6 @@ iTerm-CD/
 
 ---
 
-## 参考项目
+## 致谢
 
-- [cdto](https://github.com/jbtule/cdto) — Finder 工具栏 App，在 Terminal 中打开当前 Finder 目录
+本项目的 Finder 工具栏 App 设计灵感来自 [cdto](https://github.com/jbtule/cdto)，感谢 [@jbtule](https://github.com/jbtule) 的出色工作。
