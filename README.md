@@ -18,9 +18,9 @@
 ```bash
 curl -L https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm2.zip -o /tmp/cd-to-iTerm2.zip \
   && ditto -x -k /tmp/cd-to-iTerm2.zip /tmp/cd-iterm2 \
-  && cp -r "/tmp/cd-iterm2/cd to iTerm2.app" ~/Applications/ \
+  && cp -r "/tmp/cd-iterm2/cd to iTerm2.app" /Applications/ \
   && rm -rf /tmp/cd-to-iTerm2.zip /tmp/cd-iterm2 \
-  && open -R ~/Applications/"cd to iTerm2.app"
+  && open -R /Applications/"cd to iTerm2.app"
 ```
 
 命令执行完会自动打开 Finder 并选中 App，按住 **⌘** 直接拖入工具栏即可。
