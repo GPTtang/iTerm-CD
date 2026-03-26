@@ -17,11 +17,6 @@
 2. 将 `cd to iTerm2.app` 移入 `~/Applications`
 3. 打开 Finder，按住 **⌘** 将 App 拖入工具栏
 
-> **macOS 安全提示**：首次打开时若提示"无法验证开发者"，右键 App → **Open** → **Open** 即可（只需一次）。或在终端运行：
-> ```bash
-> xattr -cr ~/Applications/"cd to iTerm2.app"
-> ```
-
 **首次点击工具栏按钮时**，macOS 会请求 Finder 权限 → 点「去授权」→ 在系统设置中勾选 Finder → 完成。
 
 **使用**
