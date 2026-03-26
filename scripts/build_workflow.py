@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""生成 cd to iTerm2.workflow，避免 XML 手写的编码问题。"""
+"""Generate cd to iTerm2.workflow using plistlib to avoid XML encoding issues."""
 
 import plistlib
 import os
@@ -11,7 +11,7 @@ WORKFLOW_NAME = "cd to iTerm2"
 WORKFLOW_PATH = os.path.join(SERVICES_DIR, f"{WORKFLOW_NAME}.workflow")
 CONTENTS_PATH = os.path.join(WORKFLOW_PATH, "Contents")
 
-# 固定 UUID，保证重复安装幂等
+# Fixed UUIDs ensure idempotent installs
 ACTION_UUID   = "A35E3D86-B19A-4B7A-B8E7-9E3E7B5A9A54"
 INPUT_UUID    = "3B2FC9B4-E949-4B28-9CD4-18CF696900B2"
 OUTPUT_UUID   = "F714DBD3-9B0C-437A-8D1B-C65F4C93FE9E"
@@ -125,7 +125,7 @@ def main():
     with open(os.path.join(CONTENTS_PATH, "Info.plist"), "wb") as f:
         plistlib.dump(info, f, fmt=plistlib.FMT_XML)
 
-    print(f"✅  workflow 已生成: {WORKFLOW_PATH}")
+    print(f"✅  Workflow generated: {WORKFLOW_PATH}")
 
 
 if __name__ == "__main__":

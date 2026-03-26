@@ -1,10 +1,10 @@
 -- cd to iTerm2
--- Finder 工具栏 App：点击后在 iTerm2 中打开当前 Finder 目录
+-- Finder toolbar app: opens the current Finder directory in iTerm2
 
 on run
-    -- 检查 iTerm2 是否安装
+    -- Check if iTerm2 is installed
     if not iTerm2IsInstalled() then
-        display alert "未找到 iTerm2" message "请先安装 iTerm2：https://iterm2.com/" as critical
+        display alert "iTerm2 not found" message "Please install iTerm2 first: https://iterm2.com/" as critical
         return
     end if
 
@@ -14,13 +14,13 @@ on run
         if errNum is -1743 then
             showPermissionDialog()
         else
-            display notification "无法读取 Finder 目录" with title "cd to iTerm2"
+            display notification "Could not read Finder directory" with title "cd to iTerm2"
         end if
         return
     end try
 
     if dirPath is missing value then
-        display notification "没有找到 Finder 窗口" with title "cd to iTerm2"
+        display notification "No Finder window found" with title "cd to iTerm2"
         return
     end if
 
@@ -30,20 +30,20 @@ on run
         if errNum is -1743 then
             showPermissionDialog()
         else
-            display alert "cd to iTerm2 出错" message errMsg
+            display alert "cd to iTerm2 error" message errMsg
         end if
     end try
 end run
 
--- 弹出 Automation 权限引导对话框
+-- Show Automation permission guidance dialog
 on showPermissionDialog()
-    display dialog "请授予「cd to iTerm2」访问 Finder 的权限。" & return & return & "点击「去授权」将打开系统设置 → 自动操作，勾选 Finder 后重试。" buttons {"取消", "去授权"} default button "去授权" with title "需要权限" with icon caution
-    if button returned of result is "去授权" then
+    display dialog "Please grant \"cd to iTerm2\" permission to access Finder." & return & return & "Click \"Open Settings\" to open System Settings → Automation, enable Finder, then try again." buttons {"Cancel", "Open Settings"} default button "Open Settings" with title "Permission Required" with icon caution
+    if button returned of result is "Open Settings" then
         do shell script "open 'x-apple.systempreferences:com.apple.preference.security?Privacy_Automation'"
     end if
 end showPermissionDialog
 
--- 检查 iTerm2 是否安装
+-- Check if iTerm2 is installed
 on iTerm2IsInstalled()
     try
         do shell script "open -Ra iTerm"
@@ -53,7 +53,7 @@ on iTerm2IsInstalled()
     end try
 end iTerm2IsInstalled
 
--- 获取当前 Finder 目录：优先用选中项，否则用窗口目标
+-- Get current Finder directory: prefer selected item, fall back to front window target
 on getFinderPath()
     tell application "Finder"
         set sel to selection
