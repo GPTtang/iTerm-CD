@@ -3,16 +3,19 @@
 
 import plistlib
 import os
-import uuid
 import shutil
+
 
 SERVICES_DIR = os.path.expanduser("~/Library/Services")
 WORKFLOW_NAME = "cd to iTerm2"
 WORKFLOW_PATH = os.path.join(SERVICES_DIR, f"{WORKFLOW_NAME}.workflow")
 CONTENTS_PATH = os.path.join(WORKFLOW_PATH, "Contents")
 
-# ── Shell script（传给 Run Shell Script action）────────────────────────────────
-# 用单个 osascript 调用 + 多行 AppleScript，避免多 -e 和 & 转义问题
+# 固定 UUID，保证重复安装幂等
+ACTION_UUID   = "A35E3D86-B19A-4B7A-B8E7-9E3E7B5A9A54"
+INPUT_UUID    = "3B2FC9B4-E949-4B28-9CD4-18CF696900B2"
+OUTPUT_UUID   = "F714DBD3-9B0C-437A-8D1B-C65F4C93FE9E"
+
 SHELL_SCRIPT = r"""for f in "$@"; do
   if [ -d "$f" ]; then
     DIR="$f"
@@ -22,9 +25,6 @@ SHELL_SCRIPT = r"""for f in "$@"; do
   open -a iTerm "$DIR"
 done
 """
-
-# ── document.wflow plist ──────────────────────────────────────────────────────
-action_uuid = str(uuid.uuid4()).upper()
 
 document = {
     "AMApplicationBuild": "523",
@@ -57,7 +57,7 @@ document = {
                 "ActionParameters": {
                     "COMMAND_STRING": SHELL_SCRIPT,
                     "CheckedForUserDefaultShell": True,
-                    "inputMethod": 1,   # pass as arguments
+                    "inputMethod": 1,
                     "shell": "/bin/bash",
                     "source": "",
                 },
@@ -67,14 +67,14 @@ document = {
                 "CanShowWhenRun": True,
                 "Category": ["AMCategoryUtilities"],
                 "Class Name": "RunShellScriptAction",
-                "InputUUID": str(uuid.uuid4()).upper(),
-                "OutputUUID": str(uuid.uuid4()).upper(),
-                "UUID": action_uuid,
+                "InputUUID": INPUT_UUID,
+                "OutputUUID": OUTPUT_UUID,
+                "UUID": ACTION_UUID,
                 "UnlocalizedApplications": ["Automator"],
                 "arguments": {
-                    "0": {"default value": 0,  "name": "inputMethod",    "required": "0", "type": "0", "uuid": "0"},
-                    "1": {"default value": "", "name": "COMMAND_STRING",  "required": "0", "type": "0", "uuid": "1"},
-                    "2": {"default value": "/bin/sh", "name": "shell",   "required": "0", "type": "0", "uuid": "2"},
+                    "0": {"default value": 0,  "name": "inputMethod",   "required": "0", "type": "0", "uuid": "0"},
+                    "1": {"default value": "", "name": "COMMAND_STRING", "required": "0", "type": "0", "uuid": "1"},
+                    "2": {"default value": "/bin/sh", "name": "shell",  "required": "0", "type": "0", "uuid": "2"},
                 },
                 "isViewVisible": 1,
                 "location": "398.500000:253.000000",
@@ -102,7 +102,6 @@ document = {
     },
 }
 
-# ── Info.plist ────────────────────────────────────────────────────────────────
 info = {
     "NSServices": [
         {
@@ -114,16 +113,20 @@ info = {
     ]
 }
 
-# ── Write files ───────────────────────────────────────────────────────────────
-if os.path.exists(WORKFLOW_PATH):
-    shutil.rmtree(WORKFLOW_PATH)
 
-os.makedirs(CONTENTS_PATH)
+def main():
+    if os.path.exists(WORKFLOW_PATH):
+        shutil.rmtree(WORKFLOW_PATH)
+    os.makedirs(CONTENTS_PATH)
 
-with open(os.path.join(CONTENTS_PATH, "document.wflow"), "wb") as f:
-    plistlib.dump(document, f, fmt=plistlib.FMT_XML)
+    with open(os.path.join(CONTENTS_PATH, "document.wflow"), "wb") as f:
+        plistlib.dump(document, f, fmt=plistlib.FMT_XML)
 
-with open(os.path.join(CONTENTS_PATH, "Info.plist"), "wb") as f:
-    plistlib.dump(info, f, fmt=plistlib.FMT_XML)
+    with open(os.path.join(CONTENTS_PATH, "Info.plist"), "wb") as f:
+        plistlib.dump(info, f, fmt=plistlib.FMT_XML)
 
-print(f"✅  workflow 已生成: {WORKFLOW_PATH}")
+    print(f"✅  workflow 已生成: {WORKFLOW_PATH}")
+
+
+if __name__ == "__main__":
+    main()

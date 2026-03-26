@@ -26,32 +26,19 @@ PLIST="$APP_PATH/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'cd to iTerm2'" "$PLIST" 2>/dev/null \
   || /usr/libexec/PlistBuddy -c "Set :CFBundleName 'cd to iTerm2'" "$PLIST"
 
-# 关键：告诉 macOS 为什么需要 Apple Events，触发系统权限弹窗
-/usr/libexec/PlistBuddy -c "Add :NSAppleEventsUsageDescription string 'Queries Finder to get current directory and opens it in iTerm2'" "$PLIST" 2>/dev/null \
-  || /usr/libexec/PlistBuddy -c "Set :NSAppleEventsUsageDescription 'Queries Finder to get current directory and opens it in iTerm2'" "$PLIST"
+/usr/libexec/PlistBuddy -c "Add :NSAppleEventsUsageDescription string 'Queries Finder to get the current directory and opens it in iTerm2'" "$PLIST" 2>/dev/null \
+  || /usr/libexec/PlistBuddy -c "Set :NSAppleEventsUsageDescription 'Queries Finder to get the current directory and opens it in iTerm2'" "$PLIST"
 
-# ── Entitlements ──────────────────────────────────────────────────────────────
-cat > "$ENTITLEMENTS" <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>com.apple.security.automation.apple-events</key>
-    <true/>
-</dict>
-</plist>
-EOF
+# ── 先移除隔离标记，再 codesign（顺序很重要：签名后不能再改 xattrs）────────────
+xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null || true
 
-# ── Ad-hoc codesign（写入 entitlement，让 macOS 正确识别权限需求）─────────────
+# ── Ad-hoc codesign ───────────────────────────────────────────────────────────
 codesign --force --sign - --entitlements "$ENTITLEMENTS" "$APP_PATH"
 
-# ── 移除隔离标记 ──────────────────────────────────────────────────────────────
-xattr -cr "$APP_PATH"
-
-# ── 打包 zip（用 ditto 保留 App bundle 结构，且不携带 quarantine 属性）─────────
+# ── 打包 zip（--noqtn 阻止 quarantine 传入 zip，保留其他 xattrs 含签名）────────
 ZIP_PATH="$DIST_DIR/cd-to-iTerm2.zip"
 rm -f "$ZIP_PATH"
-ditto -c -k --norsrc --noextattr --noqtn --keepParent "$APP_PATH" "$ZIP_PATH"
+ditto -c -k --noqtn --keepParent "$APP_PATH" "$ZIP_PATH"
 
 echo "✅  构建完成: $APP_PATH"
 echo "✅  打包完成: $ZIP_PATH"
