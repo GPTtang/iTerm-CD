@@ -5,17 +5,13 @@
 | 场景 | 解决方式 |
 |------|---------|
 | 在 Finder 里找到某个目录，想立刻用终端打开 | 点工具栏按钮，直接在 iTerm2 打开 |
-| 在 iTerm2 里开了很多 tab，想快速 cd 到某个路径 | 点状态栏路径，当前 session 立即跳转 |
+| 右键文件或文件夹，想快速在终端里进入 | 右键 → Quick Actions → cd to iTerm2 |
 
 ---
 
-## 工具一：Finder 工具栏 App
+## 安装
 
-[![Download](https://img.shields.io/github/v/release/GPTtang/iTerm-CD?label=Download&logo=github)](https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm2.zip)
-
-**安装**
-
-在终端运行（推荐，避免 macOS 安全拦截）：
+在终端运行：
 
 ```bash
 curl -L https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm2.zip -o /tmp/cd-to-iTerm2.zip \
@@ -25,55 +21,33 @@ curl -L https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm
   && open -R /Applications/"cd to iTerm2.app"
 ```
 
-命令执行完会自动打开 Finder 并选中 App，按住 **⌘** 直接拖入工具栏即可。
-
-> 如果直接下载 zip 出现"无法验证开发者"提示，右键 App → **Open** → **Open** 即可绕过。
-
-**首次点击工具栏按钮时**，macOS 会请求 Finder 权限 → 点「去授权」→ 在系统设置中勾选 Finder → 完成。
-
-**使用**
-
-| 操作 | 效果 |
-|------|------|
-| 点击工具栏按钮 | 在 iTerm2 打开当前 Finder 目录 |
-| 右键 → Quick Actions → cd to iTerm2 | 在 iTerm2 打开选中的文件夹 |
+命令执行完会自动打开 Finder 并选中 App，按住 **⌘** 拖入工具栏即可。
 
 ---
 
-## 工具二：iTerm2 状态栏组件
+## 首次授权（只需一次）
 
-iTerm2 窗口底部有一条状态栏，这个工具在状态栏里加一个组件，显示当前 session 所在的目录路径。
+首次点击工具栏按钮时，macOS 会请求 Finder 访问权限：
 
-点击它，会在当前 terminal 里自动执行 `cd /你当前的路径`，相当于帮你打了一遍 cd 命令。
+1. 弹出权限询问框 → 点 **好**
+2. 弹出「去授权」提示 → 点 **去授权** → 自动跳转系统设置
+3. 系统设置 → 隐私与安全 → 自动操作 → `cd to iTerm2` → 勾选 **Finder**
+4. 回到 Finder，再次点击工具栏按钮即可正常使用
 
-适合这类场景：打开了很多 tab，切来切去之后想快速回到某个目录，点一下就回去，不用手动输入路径。
+---
 
-**安装**
+## 使用
 
-```bash
-git clone https://github.com/GPTtang/iTerm-CD.git
-cd iTerm-CD
-bash install.sh
-```
+| 操作 | 效果 |
+|------|------|
+| 点击工具栏按钮 | 在 iTerm2 打开当前 Finder 窗口的目录 |
+| 右键 → Quick Actions → cd to iTerm2 | 在 iTerm2 打开选中的文件夹 |
 
-脚本运行完成后，在 iTerm2 中点击一次：**Scripts → Manage → Install Python Runtime**
+已有 iTerm2 窗口时新建 tab，无窗口时新建 window。
 
-重开 iTerm2 窗口，状态栏即显示当前路径。
+---
 
-**设置**（可选）
-
-```bash
-# 路径过长时只显示最后 N 段
-defaults write io.github.iterm-cd max-path-segments -int 3
-
-# cd 后自动清屏
-defaults write io.github.iterm-cd clear-on-cd -bool true
-
-# 点击动作：cd（默认）/ copy 复制路径 / finder 在 Finder 打开
-defaults write io.github.iterm-cd click-action -string copy
-```
-
-**卸载**
+## 卸载
 
 ```bash
 bash uninstall.sh
