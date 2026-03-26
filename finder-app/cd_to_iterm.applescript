@@ -10,8 +10,12 @@ on run
 
     try
         set dirPath to getFinderPath()
-    on error
-        display notification "无法读取 Finder 目录" with title "cd to iTerm2"
+    on error errMsg number errNum
+        if errNum is -1743 then
+            showPermissionDialog()
+        else
+            display notification "无法读取 Finder 目录" with title "cd to iTerm2"
+        end if
         return
     end try
 
@@ -24,15 +28,20 @@ on run
         do shell script "open -a iTerm " & quoted form of dirPath
     on error errMsg number errNum
         if errNum is -1743 then
-            display dialog "请授予「cd to iTerm2」访问 Finder 的权限。" & return & return & "点击「去授权」将打开系统设置 → 自动操作，勾选 Finder 后重试。" buttons {"取消", "去授权"} default button "去授权" with title "需要权限" with icon caution
-            if button returned of result is "去授权" then
-                do shell script "open 'x-apple.systempreferences:com.apple.preference.security?Privacy_Automation'"
-            end if
+            showPermissionDialog()
         else
             display alert "cd to iTerm2 出错" message errMsg
         end if
     end try
 end run
+
+-- 弹出 Automation 权限引导对话框
+on showPermissionDialog()
+    display dialog "请授予「cd to iTerm2」访问 Finder 的权限。" & return & return & "点击「去授权」将打开系统设置 → 自动操作，勾选 Finder 后重试。" buttons {"取消", "去授权"} default button "去授权" with title "需要权限" with icon caution
+    if button returned of result is "去授权" then
+        do shell script "open 'x-apple.systempreferences:com.apple.preference.security?Privacy_Automation'"
+    end if
+end showPermissionDialog
 
 -- 检查 iTerm2 是否安装
 on iTerm2IsInstalled()
