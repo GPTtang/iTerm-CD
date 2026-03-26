@@ -48,4 +48,10 @@ codesign --force --sign - --entitlements "$ENTITLEMENTS" "$APP_PATH"
 # ── 移除隔离标记 ──────────────────────────────────────────────────────────────
 xattr -cr "$APP_PATH"
 
+# ── 打包 zip（用 ditto 保留 App bundle 结构，且不携带 quarantine 属性）─────────
+ZIP_PATH="$DIST_DIR/cd-to-iTerm2.zip"
+rm -f "$ZIP_PATH"
+ditto -c -k --norsrc --noextattr --noqtn --keepParent "$APP_PATH" "$ZIP_PATH"
+
 echo "✅  构建完成: $APP_PATH"
+echo "✅  打包完成: $ZIP_PATH"
