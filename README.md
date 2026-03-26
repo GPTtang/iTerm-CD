@@ -69,9 +69,11 @@ bash install.sh
 bash uninstall.sh
 ```
 
-或手动删除：
-- `/Applications/cd to iTerm2.app`
-- `~/Library/Services/cd to iTerm2.workflow`
+脚本会自动完成：
+1. 从 Finder 工具栏移除
+2. 删除 `/Applications/cd to iTerm2.app`
+3. 删除 `~/Library/Services/cd to iTerm2.workflow`
+4. 重启 Finder 使变更生效
 
 ---
 
