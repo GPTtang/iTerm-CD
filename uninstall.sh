@@ -11,7 +11,7 @@ sleep 1
 
 # ── 2. 从 Finder 工具栏 plist 中移除条目 ─────────────────────────────────────
 python3 - <<'PYEOF'
-import plistlib, os, time, subprocess
+import plistlib, os
 
 plist_path = os.path.expanduser("~/Library/Preferences/com.apple.finder.plist")
 app_name   = "cd to iTerm2"
@@ -27,14 +27,38 @@ toolbar_key = "NSToolbar Configuration Browser"
 changed = False
 
 if toolbar_key in prefs:
-    tb_config = prefs[toolbar_key]
-    for key in ("TB Item Identifiers", "TB Default Item Identifiers"):
-        if key in tb_config:
-            before = tb_config[key]
-            after  = [item for item in before if app_name not in str(item)]
-            if len(after) != len(before):
-                tb_config[key] = after
-                changed = True
+    tb_config  = prefs[toolbar_key]
+    # 自定义 App 存在 TB Item Plists（dict），key 是序号字符串"1","2"...
+    # TB Item Identifiers 中对应位置是 "com.apple.finder.loc "
+    item_plists = tb_config.get("TB Item Plists", {})
+    item_ids    = list(tb_config.get("TB Item Identifiers", []))
+
+    # 找出所有指向目标 App 的序号
+    keys_to_remove = []
+    for k, v in item_plists.items():
+        alias = v.get("_CFURLAliasData", b"")
+        url   = v.get("_CFURLString", "")
+        if app_name in str(alias) or app_name in url:
+            keys_to_remove.append(int(k))
+
+    if keys_to_remove:
+        # 按序号从大到小处理，避免下标偏移
+        for key_num in sorted(keys_to_remove, reverse=True):
+            # 移除 TB Item Identifiers 中第 key_num 个 "com.apple.finder.loc "
+            count = 0
+            for i, item in enumerate(item_ids):
+                if item == "com.apple.finder.loc ":
+                    count += 1
+                    if count == key_num:
+                        item_ids.pop(i)
+                        break
+            del item_plists[str(key_num)]
+
+        # 重新连续编号
+        remaining = sorted(item_plists.keys(), key=lambda x: int(x))
+        tb_config["TB Item Plists"]      = {str(i + 1): item_plists[k] for i, k in enumerate(remaining)}
+        tb_config["TB Item Identifiers"] = item_ids
+        changed = True
 
 if changed:
     with open(plist_path, "wb") as f:
