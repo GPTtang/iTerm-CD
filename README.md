@@ -42,11 +42,11 @@ curl -L https://github.com/GPTtang/iTerm-CD/releases/latest/download/cd-to-iTerm
 
 ## 工具二：iTerm2 状态栏组件
 
-在状态栏实时显示当前路径，点击即执行 `cd`。
+iTerm2 窗口底部有一条状态栏，这个工具在状态栏里加一个组件，显示当前 session 所在的目录路径。
 
-```
-~/projects/myapp/src ▶
-```
+点击它，会在当前 terminal 里自动执行 `cd /你当前的路径`，相当于帮你打了一遍 cd 命令。
+
+适合这类场景：打开了很多 tab，切来切去之后想快速回到某个目录，点一下就回去，不用手动输入路径。
 
 **安装**
 
