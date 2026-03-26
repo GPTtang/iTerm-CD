@@ -14,7 +14,7 @@
 **前提**：已安装 [iTerm2](https://iterm2.com/)
 
 ```bash
-git clone https://github.com/your-username/iTerm-CD.git
+git clone https://github.com/GPTtang/iTerm-CD.git
 cd iTerm-CD
 bash install.sh
 ```
